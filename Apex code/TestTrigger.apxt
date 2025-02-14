@@ -1,0 +1,27 @@
+@isTest
+public class FoodOptionTriggerTest {
+    @testSetup
+    static void setupTestData() {
+        // Create a test Hotel record
+        Hotel__c testHotel1 = new Hotel__c(Name = 'Hotel A');
+        insert testHotel1;
+        // Create Food Option records for testHotel1
+        List<Food_Option__c> foodOptions = new List<Food_Option__c>{
+            new Food_Option__c(Name__c = 'Pizza', Hotel__c = testHotel1.Id),
+            new Food_Option__c(Name__c = 'Burger', Hotel__c = testHotel1.Id)
+        };
+        insert foodOptions;
+    }
+    @isTest
+    static void testAfterInsert() {
+        // Fetch the Hotel record before insert
+        Hotel__c testHotel = [SELECT Id, TotalFoodOptions__c FROM Hotel__c WHERE Name = 'Hotel A' LIMIT 1];
+        System.assertEquals(2, testHotel.TotalFoodOptions__c, 'Initial count should be 2');
+        // Insert a new Food Option
+        Food_Option__c newFoodOption = new Food_Option__c(Name__c = 'Pasta', Hotel__c = testHotel.Id);
+        insert newFoodOption;
+        // Verify the count after insert
+        testHotel = [SELECT Id, TotalFoodOptions__c FROM Hotel__c WHERE Id = :testHotel.Id];
+        System.assertEquals(3, testHotel.TotalFoodOptions__c, 'Count should increase to 3 after insert');
+    }
+}

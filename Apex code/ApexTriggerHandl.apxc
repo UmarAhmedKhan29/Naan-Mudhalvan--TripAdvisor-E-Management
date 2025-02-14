@@ -1,0 +1,35 @@
+public class FoodOptionTriggerHandler {
+    public static void updateHotelInformation(List<Food_Option__c> newFoodOptions, List<Food_Option__c> oldFoodOptions, String operation) {
+        Set<Id> hotelIdsToUpdate = new Set<Id>();
+        // Collect unique Hotel IDs from new Food Options (insert or update)
+        if (newFoodOptions != null) {
+            for (Food_Option__c foodOption : newFoodOptions) {
+                if (foodOption.Hotel__c != null) {
+                    hotelIdsToUpdate.add(foodOption.Hotel__c);
+                }
+            }
+        }
+        // Collect unique Hotel IDs from old Food Options (update or delete)
+        if (oldFoodOptions != null) {
+            for (Food_Option__c foodOption : oldFoodOptions) {
+                if (foodOption.Hotel__c != null) {
+                    hotelIdsToUpdate.add(foodOption.Hotel__c);
+                }
+            }
+        }
+        if (hotelIdsToUpdate.isEmpty()) {
+            return;
+        }
+        // Query the affected Hotel records
+        List<Hotel__c> hotelsToUpdate = [SELECT Id, TotalFoodOptions__c FROM Hotel__c WHERE Id IN :hotelIdsToUpdate];
+        // Recalculate the total food options count for each hotel
+        for (Hotel__c hotel : hotelsToUpdate) {
+            Integer totalFoodOptions = [SELECT COUNT() FROM Food_Option__c WHERE Hotel__c = :hotel.Id];
+            hotel.TotalFoodOptions__c = totalFoodOptions;
+        }
+        // Update the Hotel records with the new total count
+        if (!hotelsToUpdate.isEmpty()) {
+            update hotelsToUpdate;
+        }
+    }
+}
